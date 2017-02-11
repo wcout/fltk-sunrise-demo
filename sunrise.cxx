@@ -83,6 +83,7 @@ public:
 	int x, y, w, h;
 	uchar t;
 private:
+	Nebula( const Nebula& ) {} // forbid copy()
 	Fl_RGB_Image *img;
 };
 
@@ -337,7 +338,7 @@ public:
 	}
 	static void cb_timer( void *d_ )
 	{
-		((Sunrise *)d_)->onTimer();
+		(static_cast<Sunrise *>( d_ ))->onTimer();
 	}
 	virtual void resize( int x_, int y_, int w_, int h_ )
 	{
