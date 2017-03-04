@@ -150,6 +150,7 @@ class Sunrise : public Fl_Double_Window
 typedef Fl_Double_Window Inherited;
 public:
 	Sunrise() : Inherited( 1024, 768, "sunrise" ),
+		_debug( false ),
 		_sun_angle( 170. ),
 		_bg( fl_rgb_color( fl_darker( FL_DARK_BLUE ) ) ),
 		_zenith( .0 ),
@@ -316,6 +317,17 @@ public:
 		}
 		return ret;
 	}
+	void drawInfo()
+	{
+		char buf[30];
+		double angle( _sun_angle + 180. );
+		if ( angle > 360. )
+			angle -= 360;
+		snprintf( buf, sizeof( buf ), "%3.1f°", angle );
+		fl_font( FL_HELVETICA, _sun_r  );
+		fl_color( FL_BLUE );
+		fl_draw( buf, w() / 2, h() - _sun_r );
+	}
 	void draw()
 	{
 		drawBg();
@@ -328,6 +340,8 @@ public:
 		drawSun();
 		if ( zenith() > 0.65 )
 			drawClouds();
+		if ( _debug )
+			drawInfo();
 	}
 	void moveSun()
 	{
@@ -379,6 +393,8 @@ public:
 		for ( int i = 0; i < argc_; i++ )
 		{
 			string arg( argv_[i] ? argv_[i] : "" );
+			if ( arg == "-d" )
+				_debug = true;
 			if ( arg == "-f" )
 				fullscreen();
 			if ( arg == "-s" )
@@ -396,6 +412,7 @@ public:
 		return _zenith > 0. ? _zenith > 1. ? 1. : _zenith : .0;
 	}
 private:
+	bool _debug;
 	double _sun_angle;
 	int _sun_x;
 	int _sun_y;
