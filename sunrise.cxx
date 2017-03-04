@@ -150,16 +150,15 @@ class Sunrise : public Fl_Double_Window
 typedef Fl_Double_Window Inherited;
 public:
 	Sunrise() : Inherited( 1024, 768, "sunrise" ),
-		_sun_x( w() / 8 ),
-		_sun_y( -h() ),
+		_sun_angle( 170. ),
 		_bg( fl_rgb_color( fl_darker( FL_DARK_BLUE ) ) ),
 		_zenith( .0 ),
 		_sun_r( 0 ),
-		_up( false ),
 		_frame( 0 ),
 		_to( 0.05 ),
 		_hold( false )
 	{
+		moveSun();
 		color( FL_BLACK );
 		resizable( this );
 		end();
@@ -332,26 +331,22 @@ public:
 	}
 	void moveSun()
 	{
-		if ( _up )
-		{
-			_sun_x += 1;
-			if ( _sun_x >= w() )
-				_up = false;
-		}
-		else
-		{
-			_sun_x -= 1;
-			if ( _sun_x <= 0 )
-				_up = true;
-		}
+		_sun_angle += .1;
+		if ( _sun_angle > 360. )
+			_sun_angle = 0.;
+		_up = _sun_angle >= 180 && _sun_angle < 360.;
 
-		int H = h() - _sun_r; // because we keep sun below ceiling
-		int sun_h = (double)H / w() * 4 * pow( _sun_x - w() / 2., 2 ) / w();
-		_sun_y = H - sun_h;
-		if ( !_up )
-			_sun_y = -_sun_y;
+		int H = ( h() - _sun_r ) * 2;
+		int W = w() - 2 * _sun_r;
+		int cx = W / 2;
+		int cy = H / 2;
+		_sun_x = cx + cos( _sun_angle * M_PI / 180. ) * cx;
+		_sun_y = cy + sin( _sun_angle * M_PI / 180. ) * cy;
+		_sun_y -= H / 2;
+		_sun_y *= -1;
+		_sun_x += _sun_r;
 
-		_zenith = (double)_sun_y / H;
+		_zenith = (double)_sun_y / ( H / 2 );
 	}
 	void onTimer()
 	{
@@ -401,6 +396,7 @@ public:
 		return _zenith > 0. ? _zenith > 1. ? 1. : _zenith : .0;
 	}
 private:
+	double _sun_angle;
 	int _sun_x;
 	int _sun_y;
 	Fl_Color _bg;
