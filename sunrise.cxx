@@ -221,9 +221,10 @@ public:
 				int f = ceil( (double)d / 2 );
 				if ( !_up )
 					d += random() % f - f / 2;
-#if 1
+
 				// draw star lens reflection
-				if ( !_up && d > (double)_sun_r / 8 && _stars[i].data++ % 10 > 5 )
+				if ( _sun_angle > 20. && _sun_angle < 160. &&
+				     d > (double)_sun_r / 8 && _stars[i].data++ % 10 > 5 )
 				{
 					fl_color( fl_darker( color ) );
 					int cx = star_x + d / 2;
@@ -232,7 +233,6 @@ public:
 					fl_line( cx - l, cy - l, cx + l, cy + l + 1 );
 					fl_line( cx - l, cy + l, cx + l, cy - l - 1 );
 				}
-#endif
 			}
 			fl_color( color );
 			if ( d <= 1 )
