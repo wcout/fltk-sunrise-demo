@@ -95,6 +95,8 @@ public:
 	{
 		speed = 0.5 * (double)( random() % 3 + 1 );
 		int flocks = x * w / 400;
+		int W = ceil( (double)w / 10 );
+		int H = ceil( (double)h / 10 );
 		for ( int i = 0; i < flocks; i++ )
 		{
 			while ( 1 )
@@ -105,7 +107,7 @@ public:
 				if ( x > w - w / 5 && y > h - h / 5 ) continue;
 				if ( x < w / 5 && y > h - h / 5 ) continue;
 				if ( x > w - w / 5 && y < h / 5 ) continue;
-				Nebula *flock = new Nebula( x, y, random() % ( w / 10 ) + 5, random() % ( h / 10 ) + 5, random() % 30 + 5 );
+				Nebula *flock = new Nebula( x, y, random() % W + 5, random() % H + 5, random() % 30 + 5 );
 				_flocks.push_back( flock );
 				break;
 			}
@@ -135,11 +137,12 @@ class Star
 {
 public:
 	Star( int x_, int y_, int d_, Fl_Color color_ = FL_WHITE ) :
-		x( x_ ), y( y_ ), d( d_ ), color( color_ )
+		x( x_ ), y( y_ ), d( d_ ), color( color_ ), data( 0 )
 	{
 	}
 	int x, y, d;
 	Fl_Color color;
+	int data;
 };
 
 class Sunrise : public Fl_Double_Window
@@ -178,7 +181,8 @@ public:
 	}
 	void drawNebula()
 	{
-		for ( size_t i = 0; i < _nebula.size(); i++ )
+		int step = std::max( 1, (int)( 10 + ( _zenith * 10 ) ) );
+		for ( size_t i = 0; i < _nebula.size(); i += step )
 		{
 			int n_x = (int)( _nebula[i]->x + (double)_frame / 3. ) % w();
 			int n_y = _nebula[i]->y;
@@ -209,11 +213,32 @@ public:
 			                          abs( star_y - sun_y ) * abs( star_y - sun_y ) );
 			if ( _up && sun_dist < 6 * _sun_r )
 				continue;
-			fl_color( fl_color_average( _bg, _stars[i].color, zenith() ) );
+			Fl_Color color = fl_color_average( _bg, _stars[i].color, std::min( 1., zenith() * 2 ) );
 			int d = _stars[i].d;
-			if ( !_up )
-				d += random() % 2 - 1;
-			fl_pie( star_x , star_y, _stars[i].d, d, 0., 360. );
+
+			if ( w() >= 400 && h() >= 400 )
+			{
+				int f = ceil( (double)d / 2 );
+				if ( !_up )
+					d += random() % f - f / 2;
+#if 1
+				// draw star lens reflection
+				if ( !_up && d > (double)_sun_r / 8 && _stars[i].data++ % 10 > 5 )
+				{
+					fl_color( fl_darker( color ) );
+					int cx = star_x + d / 2;
+					int cy = star_y + d / 2;
+					int l = _sun_r / 4;
+					fl_line( cx - l, cy - l, cx + l, cy + l + 1 );
+					fl_line( cx - l, cy + l, cx + l, cy - l - 1 );
+				}
+#endif
+			}
+			fl_color( color );
+			if ( d <= 1 )
+				fl_point( star_x, star_y );
+			else
+				fl_pie( star_x , star_y,  d, d, 0., 360. );
 		}
 	}
 	void drawHalo()
@@ -233,6 +258,9 @@ public:
 	}
 	void init()
 	{
+		_sun_r = w() / 30;
+
+		int d = ceil( (double)_sun_r / 9 );
 		_stars.clear();
 		for ( int i = 0; i < 200; i++ )
 		{
@@ -241,10 +269,10 @@ public:
 				color = fl_lighter( FL_RED );
 			else if ( i % 20 == 0 )
 				color = FL_YELLOW;
-			_stars.push_back( Star( random() % w(), random() % h(), random() % 3 + 1,
-				color ) );
+			_stars.push_back( Star( random() % w(), random() % h(),
+			                  random() % d * random() % d + 1 + 2 * !(random() % 40),
+			                  color ) );
 		}
-		_sun_r = w() / 30;
 
 		for (size_t i = 0; i < _clouds.size(); i++ )
 			delete _clouds[i];
@@ -313,7 +341,7 @@ public:
 		else
 		{
 			_sun_x -= 1;
-			if ( _sun_x < 0 )
+			if ( _sun_x <= 0 )
 				_up = true;
 		}
 
@@ -324,7 +352,6 @@ public:
 			_sun_y = -_sun_y;
 
 		_zenith = (double)_sun_y / H;
-		assert( fabs( _zenith ) <= 1. );
 	}
 	void onTimer()
 	{
@@ -346,7 +373,10 @@ public:
 		int H = h();
 		Inherited::resize( x_, y_, w_, h_ );
 		if ( w_ != W || h_ != H )
+		{
+			_sun_x = (double)_sun_x * (double)w() / W;
 			init();
+		}
 	}
 	void run( int argc_ = 0, char *argv_[] = 0 )
 	{
@@ -368,7 +398,7 @@ public:
 	}
 	double zenith() const
 	{
-		return _zenith > 0. ? _zenith : .0;
+		return _zenith > 0. ? _zenith > 1. ? 1. : _zenith : .0;
 	}
 private:
 	int _sun_x;

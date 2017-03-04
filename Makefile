@@ -7,4 +7,4 @@ OBJ := $(SRC:.cxx=.o)
 TGT := $(SRC:.cxx=)
 
 all:
-	$(CXX) -O2 -Wall -o $(TGT) `$(FLTK_CONFIG) --use-images --cxxflags` $(SRC) `$(FLTK_CONFIG) --use-images --ldflags`
+	$(CXX) -g -O2 -Wall -o $(TGT) `$(FLTK_CONFIG) --use-images --cxxflags` $(SRC) `$(FLTK_CONFIG) --use-images --ldflags`
