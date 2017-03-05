@@ -328,10 +328,10 @@ public:
 		double angle( _sun_angle + 180. );
 		if ( angle > 360. )
 			angle -= 360;
-		snprintf( buf, sizeof( buf ), "%3.1f°", angle );
+		snprintf( buf, sizeof( buf ), "%3.1f%% (%3.1f°)", _zenith * 100, angle );
 		fl_font( FL_HELVETICA, _sun_r  );
 		fl_color( FL_BLUE );
-		fl_draw( buf, w() / 2, h() - _sun_r );
+		fl_draw( buf, w() / 2 - _sun_r * 2, h() - _sun_r );
 	}
 	void draw()
 	{
