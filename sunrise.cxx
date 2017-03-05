@@ -153,13 +153,12 @@ public:
 		_debug( false ),
 		_sun_angle( 170. ),
 		_bg( fl_rgb_color( fl_darker( FL_DARK_BLUE ) ) ),
-		_zenith( .0 ),
 		_sun_r( 0 ),
 		_frame( 0 ),
 		_to( 0.05 ),
 		_hold( false )
 	{
-		moveSun();
+		moveSun();	// initialize remaining values
 		color( FL_BLACK );
 		resizable( this );
 		end();
@@ -211,7 +210,7 @@ public:
 			int sun_y = h() - _sun_y + _sun_r;
 			int sun_dist = (int)sqrt( abs( star_x - sun_x ) * abs( star_x - sun_x ) +
 			                          abs( star_y - sun_y ) * abs( star_y - sun_y ) );
-			if ( _up && sun_dist < 6 * _sun_r )
+			if ( rising() && sun_dist < 6 * _sun_r )
 				continue;
 			Fl_Color color = fl_color_average( _bg, _stars[i].color, std::min( 1., zenith() * 2 ) );
 			int d = _stars[i].d;
@@ -219,7 +218,7 @@ public:
 			if ( w() >= 400 && h() >= 400 )
 			{
 				int f = ceil( (double)d / 2 );
-				if ( !_up )
+				if ( !rising() )
 					d += random() % f - f / 2;
 
 				// draw star lens reflection
@@ -345,11 +344,14 @@ public:
 	}
 	void moveSun()
 	{
-		_sun_angle += .1;
+		static const double angle_inc = 0.05;
+
+		_sun_angle += angle_inc;
 		if ( _sun_angle > 360. )
 			_sun_angle = 0.;
-		_up = _sun_angle >= 180 && _sun_angle < 360.;
 
+		// fit elliptical path within view so that sun disc is
+		// always completely within view when above horizon
 		int H = ( h() - _sun_r ) * 2;
 		int W = w() - 2 * _sun_r;
 		int cx = W / 2;
@@ -360,15 +362,15 @@ public:
 		_sun_y *= -1;
 		_sun_x += _sun_r;
 
-		_zenith = (double)_sun_y / ( H / 2 );
+		_zenith = (double)_sun_y / ( H / 2 ); // [-1, +1]
 	}
 	void onTimer()
 	{
 		if ( _hold )
 			return;
 		_bg = fl_color_average( FL_CYAN, fl_darker( FL_DARK_BLUE ), zenith() );
-		moveSun();
 		_frame++;
+		moveSun();
 		Fl::repeat_timeout( _to, cb_timer, this );
 		redraw();
 	}
@@ -407,6 +409,10 @@ public:
 		Fl::add_timeout( 0.1, cb_timer, this );
 		Fl::run();
 	}
+	bool rising() const
+	{
+		return _sun_angle >= 180 && _sun_angle < 360.;
+	}
 	double zenith() const
 	{
 		return _zenith > 0. ? _zenith > 1. ? 1. : _zenith : .0;
@@ -419,7 +425,6 @@ private:
 	Fl_Color _bg;
 	double _zenith;
 	int _sun_r;
-	bool _up;
 	int _frame;
 	double _to;
 	bool _hold;
