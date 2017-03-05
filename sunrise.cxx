@@ -34,6 +34,7 @@
 using namespace std;
 
 static const int HaloSize = 10; 	// in sun radius unit
+static int FPS = 20;
 
 static uchar *make_alpha_box( Fl_Color c_, int w_, int h_, int alpha_ )
 {
@@ -155,7 +156,7 @@ public:
 		_bg( fl_rgb_color( fl_darker( FL_DARK_BLUE ) ) ),
 		_sun_r( 0 ),
 		_frame( 0 ),
-		_to( 0.05 ),
+		_to( 1. / FPS ),
 		_hold( false )
 	{
 		moveSun();	// initialize remaining values
@@ -312,27 +313,48 @@ public:
 	int handle( int e_ )
 	{
 		int ret = Inherited::handle( e_ );
-		if ( e_ == FL_FULLSCREEN )
+		if ( e_ == FL_KEYDOWN )
 		{
-			init();
-		}
-		if ( e_ == FL_KEYDOWN && Fl::event_key() == ' ' )
-		{
-			_hold = !_hold;
-			onTimer();
+			int c = Fl::event_key();
+			if ( c == ' ' )
+			{
+				_hold = !_hold;
+				onTimer();
+			}
+			else if ( c == 'f' )
+			{
+				if ( fullscreen_active() )
+					fullscreen_off();
+				else
+					fullscreen();
+			}
+			else if ( c == 's' || c == '+' || c == '-' )
+			{
+				FPS +=  c == '-' ? -10 : 10;
+				if ( FPS > 100 )
+					FPS = 20;
+				if ( FPS < 20 )
+					FPS = 100;
+				_to = 1. / FPS;
+			}
+			else if ( c == 'd' )
+			{
+				_debug = !_debug;
+			}
 		}
 		return ret;
 	}
 	void drawInfo()
 	{
-		char buf[30];
+		char buf[50];
 		double angle( _sun_angle + 180. );
 		if ( angle > 360. )
 			angle -= 360;
-		snprintf( buf, sizeof( buf ), "%3.1f%% (%3.1f°)", _zenith * 100, angle );
+		snprintf( buf, sizeof( buf ), "[%dfps] %3.1f%% (%3.1f°)",
+			FPS, _zenith * 100, angle );
 		fl_font( FL_HELVETICA, _sun_r  );
 		fl_color( FL_BLUE );
-		fl_draw( buf, w() / 2 - _sun_r * 2, h() - _sun_r );
+		fl_draw( buf, w() / 2 - _sun_r * 3, h() - _sun_r );
 	}
 	void draw()
 	{
@@ -413,6 +435,7 @@ public:
 			if ( arg == "-sss" )
 			 _to = 0.01;
 		}
+		FPS = 1. / _to;
 		Fl::add_timeout( 0.1, cb_timer, this );
 		Fl::run();
 	}
