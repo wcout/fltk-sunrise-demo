@@ -149,9 +149,9 @@ class Sunrise : public Fl_Double_Window
 {
 typedef Fl_Double_Window Inherited;
 public:
-	Sunrise() : Inherited( 1024, 768, "sunrise" ),
+	Sunrise() : Inherited( 1024, 768, "FLTK sunrise demo" ),
 		_debug( false ),
-		_sun_angle( 170. ),
+		_sun_angle( 170. ),	// start shortly before sunrise
 		_bg( fl_rgb_color( fl_darker( FL_DARK_BLUE ) ) ),
 		_sun_r( 0 ),
 		_frame( 0 ),
@@ -262,6 +262,7 @@ public:
 	void init()
 	{
 		_sun_r = w() / 30;
+		// correction for non 4:3 window sizes (which this demo is designed for)
 		double f = ( (double)h() / w() ) / 0.75;
 		_sun_r = f * _sun_r;
 
@@ -441,6 +442,7 @@ private:
 
 int main( int argc_, char *argv_[] )
 {
+	// optionally start with: -f(ullscreen) -d(ebug) -s[ss](peed)
 	srand( time( NULL ) );
 	Sunrise s;
 	s.run( argc_ - 1, &argv_[1] );
