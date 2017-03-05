@@ -210,8 +210,12 @@ public:
 			int sun_y = h() - _sun_y + _sun_r;
 			int sun_dist = (int)sqrt( abs( star_x - sun_x ) * abs( star_x - sun_x ) +
 			                          abs( star_y - sun_y ) * abs( star_y - sun_y ) );
-			if ( rising() && sun_dist < 6 * _sun_r )
+
+			// let no stars be visible beneath sun
+			if ( ( ( _sun_angle > 160. && _sun_angle < 360. ) || _sun_angle < 20. ) &&
+			     sun_dist < 6 * _sun_r )
 				continue;
+
 			Fl_Color color = fl_color_average( _bg, _stars[i].color, std::min( 1., zenith() * 2 ) );
 			int d = _stars[i].d;
 
