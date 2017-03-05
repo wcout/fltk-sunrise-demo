@@ -354,7 +354,7 @@ public:
 			FPS, _zenith * 100, angle );
 		fl_font( FL_HELVETICA, _sun_r  );
 		fl_color( FL_BLUE );
-		fl_draw( buf, w() / 2 - _sun_r * 3, h() - _sun_r );
+		fl_draw( buf, w() / 2 - _sun_r * 4, h() - _sun_r );
 	}
 	void draw()
 	{
