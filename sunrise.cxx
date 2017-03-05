@@ -262,6 +262,8 @@ public:
 	void init()
 	{
 		_sun_r = w() / 30;
+		double f = ( (double)h() / w() ) / 0.75;
+		_sun_r = f * _sun_r;
 
 		int d = ceil( (double)_sun_r / 9 );
 		_stars.clear();
