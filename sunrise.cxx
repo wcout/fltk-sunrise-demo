@@ -343,7 +343,7 @@ public:
 		if ( _zenith < -0.4 )
 			drawSparks();
 		drawSun();
-		if ( zenith() > 0.65 )
+		if ( zenith() > 0.55 )
 			drawClouds();
 		if ( _debug )
 			drawInfo();
