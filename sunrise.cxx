@@ -223,7 +223,7 @@ public:
 			if ( w() >= 400 && h() >= 400 )
 			{
 				int f = ceil( (double)d / 2 );
-				if ( !rising() )
+				if ( f && !rising() )
 					d += random() % f - f / 2;
 
 				// draw star lens reflection
@@ -435,7 +435,7 @@ public:
 			if ( arg == "-sss" )
 			 _to = 0.01;
 		}
-		FPS = 1. / _to;
+		FPS = lround( 1. / _to );
 		Fl::add_timeout( 0.1, cb_timer, this );
 		Fl::run();
 	}
