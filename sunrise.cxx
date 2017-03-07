@@ -175,7 +175,7 @@ public:
 		for ( size_t i = 0; i < _clouds.size(); i++ )
 		{
 			int c_x = (int)( _clouds[i]->x + _clouds[i]->speed * (double)_frame / 2. ) % w();
-			int c_y = _nebula[i]->y;
+			int c_y = _clouds[i]->y;
 			_clouds[i]->draw( c_x, c_y );
 		}
 	}
