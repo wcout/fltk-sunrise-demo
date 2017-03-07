@@ -92,7 +92,9 @@ class Cloud
 {
 public:
 	Cloud( int x_, int y_, int w_, int h_ ) :
-		x( x_ ), y( y_ ), w( w_ ), h( h_ ), speed( 1. )
+		x( x_ ), y( y_ ), w( w_ ), h( h_ ),
+		speed( 1. ),
+		flockDissolve( 0. )
 	{
 		speed = 0.5 * (double)( random() % 3 + 1 );
 		int flocks = x * w / 400;
@@ -125,11 +127,17 @@ public:
 	}
 	void draw( int x_, int y_ )
 	{
-		for ( size_t i = 0; i < _flocks.size(); i++ )
-			_flocks[i]->draw( x_ + _flocks[i]->x, y_ + _flocks[i]->y );
+		if ( flockDissolve >= 0. && flockDissolve < 1. )
+		{
+			uchar t = flockDissolve * 256;
+			for ( size_t i = 0; i < _flocks.size(); i++ )
+				if ( _flocks[i]->t >= t )
+					_flocks[i]->draw( x_ + _flocks[i]->x, y_ + _flocks[i]->y );
+		}
 	}
 	int x, y, w, h;
 	double speed;
+	double flockDissolve;
 private:
 	vector<Nebula *> _flocks;
 };
@@ -157,7 +165,8 @@ public:
 		_sun_r( 0 ),
 		_frame( 0 ),
 		_to( 1. / FPS ),
-		_hold( false )
+		_hold( false ),
+		_cloud_dissolve_f( 1. )
 	{
 		moveSun();	// initialize remaining values
 		color( FL_BLACK );
@@ -176,6 +185,7 @@ public:
 		{
 			int c_x = (int)( _clouds[i]->x + _clouds[i]->speed * (double)_frame / 2. ) % w();
 			int c_y = _clouds[i]->y;
+			_clouds[i]->flockDissolve = _cloud_dissolve_f;
 			_clouds[i]->draw( c_x, c_y );
 		}
 	}
@@ -358,6 +368,8 @@ public:
 	}
 	void draw()
 	{
+		static const double cloud_max = 0.9;
+		static const double cloud_min = 0.35;
 		drawBg();
 		drawHalo();
 		if ( _zenith < -0.5 )
@@ -366,8 +378,14 @@ public:
 		if ( _zenith < -0.4 )
 			drawSparks();
 		drawSun();
-		if ( zenith() > 0.55 )
+		if ( _zenith > cloud_min )
+		{
+			_cloud_dissolve_f = _zenith < cloud_max ?
+				( 1. / ( cloud_max - cloud_min ) ) * ( cloud_max - _zenith ) : 0.;
+			_cloud_dissolve_f *= _cloud_dissolve_f;
+			_cloud_dissolve_f *= _cloud_dissolve_f;
 			drawClouds();
+		}
 		if ( _debug )
 			drawInfo();
 	}
@@ -458,6 +476,7 @@ private:
 	int _frame;
 	double _to;
 	bool _hold;
+	double _cloud_dissolve_f;
 	vector<Star> _stars;
 	vector<Nebula *> _nebula;
 	vector<Cloud *> _clouds;
