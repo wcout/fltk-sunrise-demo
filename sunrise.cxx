@@ -129,6 +129,9 @@ public:
 	{
 		if ( flockDissolve >= 0. && flockDissolve < 1. )
 		{
+			// draw only flocks with alpha above "dissolve level",
+			// this will make the (dis-)appearing process more naturally
+			// (with simple means)
 			uchar t = flockDissolve * 256;
 			for ( size_t i = 0; i < _flocks.size(); i++ )
 				if ( _flocks[i]->t >= t )
@@ -252,7 +255,7 @@ public:
 			if ( d <= 1 )
 				fl_point( star_x, star_y );
 			else
-				fl_pie( star_x , star_y,  d, d, 0., 360. );
+				fl_pie( star_x, star_y, d, d, 0., 360. );
 		}
 	}
 	void drawHalo()
@@ -261,7 +264,8 @@ public:
 		for ( double i = HaloSize; i > 1; i -= 0.1 )
 		{
 			fl_color( fl_color_average( sun_color, _bg, 1. / (double)(i) ) );
-			fl_pie( _sun_x - i * (double)_sun_r, h() -_sun_r -_sun_y - (double)_sun_r * (i - 1), _sun_r * 2 * i, _sun_r * 2 * i, 0., 360. );
+			fl_pie( _sun_x - i * (double)_sun_r, h() - _sun_r -_sun_y - (double)_sun_r * (i - 1),
+                 _sun_r * 2 * i, _sun_r * 2 * i, 0., 360. );
 		}
 	}
 	void drawSun()
@@ -291,7 +295,7 @@ public:
 			                  color ) );
 		}
 
-		for (size_t i = 0; i < _clouds.size(); i++ )
+		for ( size_t i = 0; i < _clouds.size(); i++ )
 			delete _clouds[i];
 		_clouds.clear();
 		int H = h() / 3;
@@ -304,7 +308,7 @@ public:
 			_clouds.push_back( new Cloud( x, y, W, H ) );
 		}
 
-		for (size_t i = 0; i < _nebula.size(); i++ )
+		for ( size_t i = 0; i < _nebula.size(); i++ )
 			delete _nebula[i];
 		_nebula.clear();
 		/*int*/ H = h() / 3;
@@ -380,6 +384,8 @@ public:
 		drawSun();
 		if ( _zenith > cloud_min )
 		{
+			// let clouds appear not instantaneaously but slowly by
+			// calculating a visibility factor from the zenith value
 			_cloud_dissolve_f = _zenith < cloud_max ?
 				( 1. / ( cloud_max - cloud_min ) ) * ( cloud_max - _zenith ) : 0.;
 			_cloud_dissolve_f *= _cloud_dissolve_f;
