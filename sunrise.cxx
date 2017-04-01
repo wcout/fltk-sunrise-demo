@@ -164,14 +164,17 @@ public:
 	Sunrise() : Inherited( 1024, 768, "FLTK sunrise demo" ),
 		_debug( false ),
 		_sun_angle( 170. ),	// start shortly before sunrise
+		_moon_angle( 10 ),	// start shortly after moonset
 		_bg( fl_rgb_color( fl_darker( FL_DARK_BLUE ) ) ),
 		_sun_r( 0 ),
 		_frame( 0 ),
 		_to( 1. / FPS ),
 		_hold( false ),
+		_no_moon( false ),
 		_cloud_dissolve_f( 1. )
 	{
 		moveSun();	// initialize remaining values
+		moveMoon();	// initialize remaining values
 		color( FL_BLACK );
 		resizable( this );
 		end();
@@ -267,6 +270,16 @@ public:
 			fl_pie( _sun_x - i * (double)_sun_r, h() - _sun_r -_sun_y - (double)_sun_r * (i - 1),
                  _sun_r * 2 * i, _sun_r * 2 * i, 0., 360. );
 		}
+	}
+	void drawMoon()
+	{
+		static const double phase = 0.7;
+		Fl_Color moon_color = fl_color_average( FL_WHITE, FL_YELLOW, fabs(_moon_zenith) );
+		fl_color( moon_color );
+		fl_pie( _moon_x - _sun_r, h() - _moon_y - _sun_r, _sun_r * 2, _sun_r * 2, 0., 360. );
+		fl_color( 0x22222200 );
+		fl_pie( _moon_x - _sun_r * phase, h() - _moon_y - _sun_r, _sun_r * 2 * phase, _sun_r * 2, 0., 360. );
+		fl_pie( _moon_x - _sun_r, h() - _moon_y - _sun_r, _sun_r * 2, _sun_r * 2, 270., 450. );
 	}
 	void drawSun()
 	{
@@ -382,6 +395,8 @@ public:
 		if ( _zenith < -0.4 )
 			drawSparks();
 		drawSun();
+		if ( !_no_moon )
+			drawMoon();
 		if ( _zenith > cloud_min )
 		{
 			// let clouds appear not instantaneaously but slowly by
@@ -395,28 +410,37 @@ public:
 		if ( _debug )
 			drawInfo();
 	}
-	void moveSun()
+	void moveSunOrMoon( double& angle_, int &x_, int& y_, double& zenith_ )
 	{
 		static const double angle_inc = 0.05;
 
-		_sun_angle += angle_inc;
-		if ( _sun_angle > 360. )
-			_sun_angle = 0.;
+		angle_ += angle_inc;
+		if ( angle_ > 360. )
+			angle_ = 0.;
 
-		// fit elliptical path within view so that sun disc is
+		// fit elliptical path within view so that sun/moon disc is
 		// always completely within view when above horizon
 		int H = ( h() - _sun_r ) * 2;
 		int W = w() - 2 * _sun_r;
 		int cx = W / 2;
 		int cy = H / 2;
-		_sun_x = cx + cos( _sun_angle * M_PI / 180. ) * cx;
-		_sun_y = cy + sin( _sun_angle * M_PI / 180. ) * cy;
-		_sun_y -= H / 2;
-		_sun_y *= -1;
-		_sun_x += _sun_r;
+		x_ = cx + cos( angle_ * M_PI / 180. ) * cx;
+		y_ = cy + sin( angle_ * M_PI / 180. ) * cy;
+		y_ -= H / 2;
+		y_ *= -1;
+		x_ += _sun_r;
 
-		_zenith = (double)_sun_y / ( H / 2 ); // [-1, +1]
+		zenith_ = (double)y_ / ( H / 2 ); // [-1, +1]
 	}
+	void moveSun()
+	{
+		moveSunOrMoon( _sun_angle, _sun_x, _sun_y, _zenith );
+	}
+	void moveMoon()
+	{
+		moveSunOrMoon( _moon_angle, _moon_x, _moon_y, _moon_zenith );
+	}
+
 	void onTimer()
 	{
 		if ( _hold )
@@ -424,6 +448,7 @@ public:
 		_bg = fl_color_average( FL_CYAN, fl_darker( FL_DARK_BLUE ), zenith() );
 		_frame++;
 		moveSun();
+		moveMoon();
 		Fl::repeat_timeout( _to, cb_timer, this );
 		redraw();
 	}
@@ -453,11 +478,13 @@ public:
 			if ( arg == "-f" )
 				fullscreen();
 			if ( arg == "-s" )
-			 _to = 0.03;
+				_to = 0.03;
 			if ( arg == "-ss" )
-			 _to = 0.02;
+				_to = 0.02;
 			if ( arg == "-sss" )
-			 _to = 0.01;
+				_to = 0.01;
+			if ( arg == "-m" )
+				_no_moon = true;
 		}
 		FPS = lround( 1. / _to );
 		Fl::add_timeout( 0.1, cb_timer, this );
@@ -476,12 +503,17 @@ private:
 	double _sun_angle;
 	int _sun_x;
 	int _sun_y;
+	double _moon_angle;
+	int _moon_x;
+	int _moon_y;
 	Fl_Color _bg;
 	double _zenith;
+	double _moon_zenith;
 	int _sun_r;
 	int _frame;
 	double _to;
 	bool _hold;
+	bool _no_moon;
 	double _cloud_dissolve_f;
 	vector<Star> _stars;
 	vector<Nebula *> _nebula;
