@@ -382,6 +382,10 @@ public:
 			{
 				_debug = !_debug;
 			}
+			else if ( c == 'm' )
+			{
+				_no_moon = !_no_moon;
+			}
 		}
 		return ret;
 	}
