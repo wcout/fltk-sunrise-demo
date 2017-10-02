@@ -1,5 +1,4 @@
 /*
-
  FLTK Sunrise demo.
 
  (c) 2017 wcout wcout<gmx.net>
@@ -233,7 +232,8 @@ public:
 			     sun_dist < 6 * _sun_r )
 				continue;
 
-			Fl_Color color = fl_color_average( _bg, _stars[i].color, std::min( 1., zenith() * 2 ) );
+//			Fl_Color color = fl_color_average( _bg, _stars[i].color, std::min( 1., zenith() * 2 ) );
+			Fl_Color color = fl_color_average( _bg, _stars[i].color, std::min( 1., nightFactor() * 2 ) );
 			int d = _stars[i].d;
 
 			if ( w() >= 400 && h() >= 400 )
@@ -273,13 +273,27 @@ public:
 	}
 	void drawMoon()
 	{
-		static const double phase = 0.7;
-		Fl_Color moon_color = fl_color_average( FL_WHITE, FL_YELLOW, fabs(_moon_zenith) );
+		double angle_diff = _moon_angle - _sun_angle;
+		if ( angle_diff < 0. )
+			angle_diff += 360;
+		double phase = 2 * ( angle_diff / 360. - 0.5 );
+//		printf( "phase: %f  (%f)\n", phase, angle_diff  );
+		Fl_Color moon_color = _zenith < 0. ?
+			fl_color_average( FL_WHITE, FL_YELLOW, fabs( _moon_zenith ) ) :
+			fl_color_average( FL_WHITE, FL_GRAY, fabs( _moon_zenith ) );
 		fl_color( moon_color );
 		fl_pie( _moon_x - _sun_r, h() - _moon_y - _sun_r, _sun_r * 2, _sun_r * 2, 0., 360. );
-		fl_color( 0x22222200 );
-		fl_pie( _moon_x - _sun_r * phase, h() - _moon_y - _sun_r, _sun_r * 2 * phase, _sun_r * 2, 0., 360. );
-		fl_pie( _moon_x - _sun_r, h() - _moon_y - _sun_r, _sun_r * 2, _sun_r * 2, 270., 450. );
+		fl_color( fl_darker( _bg ) );
+		if ( phase > 0. )
+		{
+			fl_pie( _moon_x - _sun_r * phase, h() - _moon_y - _sun_r, _sun_r * 2 * phase, _sun_r * 2, 0., 360. );
+			fl_pie( _moon_x - _sun_r, h() - _moon_y - _sun_r, _sun_r * 2, _sun_r * 2, 90., 270. );
+		}
+		else
+		{
+			fl_pie( _moon_x - _sun_r * fabs( phase ), h() - _moon_y - _sun_r, _sun_r * 2 * fabs( phase ), _sun_r * 2, 0., 360. );
+			fl_pie( _moon_x - _sun_r, h() - _moon_y - _sun_r, _sun_r * 2, _sun_r * 2, 270., 450. );
+		}
 	}
 	void drawSun()
 	{
@@ -410,11 +424,9 @@ public:
 		if ( _debug )
 			drawInfo();
 	}
-	void moveSunOrMoon( double& angle_, int &x_, int& y_, double& zenith_ )
+	void moveSunOrMoon( double angle_inc_, double& angle_, int &x_, int& y_, double& zenith_ )
 	{
-		static const double angle_inc = 0.05;
-
-		angle_ += angle_inc;
+		angle_ += angle_inc_;
 		if ( angle_ > 360. )
 			angle_ = 0.;
 
@@ -434,18 +446,21 @@ public:
 	}
 	void moveSun()
 	{
-		moveSunOrMoon( _sun_angle, _sun_x, _sun_y, _zenith );
+		static const double angle_inc = 0.05;
+		moveSunOrMoon( angle_inc, _sun_angle, _sun_x, _sun_y, _zenith );
 	}
 	void moveMoon()
 	{
-		moveSunOrMoon( _moon_angle, _moon_x, _moon_y, _moon_zenith );
+		static const double angle_inc = 0.05 + 0.004;
+		moveSunOrMoon( angle_inc, _moon_angle, _moon_x, _moon_y, _moon_zenith );
 	}
 
 	void onTimer()
 	{
 		if ( _hold )
 			return;
-		_bg = fl_color_average( FL_CYAN, fl_darker( FL_DARK_BLUE ), zenith() );
+//		_bg = fl_color_average( FL_CYAN, fl_darker( FL_DARK_BLUE ), zenith() );
+		_bg = fl_color_average( FL_CYAN, fl_darker( FL_DARK_BLUE ), nightFactor() );
 		_frame++;
 		moveSun();
 		moveMoon();
@@ -497,6 +512,17 @@ public:
 	double zenith() const
 	{
 		return _zenith > 0. ? _zenith > 1. ? 1. : _zenith : .0;
+	}
+	double nightFactor() const
+	{
+		static const double NearDist = 2.;
+		if ( !_no_moon )
+		{
+			double sun_moon_dist = fabs( fabs( _sun_angle ) - fabs( _moon_angle ) );
+			if ( sun_moon_dist < NearDist )
+				return sun_moon_dist / NearDist;
+		}
+		return zenith();
 	}
 private:
 	bool _debug;
