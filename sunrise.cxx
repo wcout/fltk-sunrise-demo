@@ -385,6 +385,12 @@ public:
 			else if ( c == 'm' )
 			{
 				_no_moon = !_no_moon;
+				if ( !_no_moon )
+				{
+					_moon_angle = _sun_angle - random() % 30;
+					if ( _moon_angle < 0. )
+						_moon_angle += 360.;
+				}
 			}
 		}
 		return ret;
@@ -520,11 +526,13 @@ public:
 	double nightFactor() const
 	{
 		static const double NearDist = 2.;
-		if ( !_no_moon )
+		if ( !_no_moon && rising() )
 		{
-			double sun_moon_dist = fabs( fabs( _sun_angle ) - fabs( _moon_angle ) );
+			double sun_moon_dist = fabs( _sun_angle - _moon_angle );
+			if ( sun_moon_dist > 180. )
+				sun_moon_dist = 360 - sun_moon_dist;
 			if ( sun_moon_dist < NearDist )
-				return sun_moon_dist / NearDist;
+				return ( sun_moon_dist / NearDist ) * zenith();
 		}
 		return zenith();
 	}
