@@ -232,7 +232,6 @@ public:
 			     sun_dist < 6 * _sun_r )
 				continue;
 
-//			Fl_Color color = fl_color_average( _bg, _stars[i].color, std::min( 1., zenith() * 2 ) );
 			Fl_Color color = fl_color_average( _bg, _stars[i].color, std::min( 1., nightFactor() * 2 ) );
 			int d = _stars[i].d;
 
@@ -277,7 +276,6 @@ public:
 		if ( angle_diff < 0. )
 			angle_diff += 360;
 		double phase = 2 * ( angle_diff / 360. - 0.5 );
-//		printf( "phase: %f  (%f)\n", phase, angle_diff  );
 		Fl_Color moon_color = _zenith < 0. ?
 			fl_color_average( FL_WHITE, FL_YELLOW, fabs( _moon_zenith ) ) :
 			fl_color_average( FL_WHITE, FL_GRAY, fabs( _moon_zenith ) );
@@ -469,7 +467,6 @@ public:
 	{
 		if ( _hold )
 			return;
-//		_bg = fl_color_average( FL_CYAN, fl_darker( FL_DARK_BLUE ), zenith() );
 		_bg = fl_color_average( FL_CYAN, fl_darker( FL_DARK_BLUE ), nightFactor() );
 		_frame++;
 		moveSun();
