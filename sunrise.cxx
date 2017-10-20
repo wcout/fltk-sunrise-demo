@@ -72,8 +72,7 @@ public:
 	}
 	void draw()
 	{
-		if ( img )
-			img->draw( x, y );
+		draw( x, y );
 	}
 	void draw( int x_, int y_ )
 	{
@@ -299,6 +298,19 @@ public:
 		fl_color( sun_color );
 		fl_pie( _sun_x - _sun_r, h() - _sun_y - _sun_r, _sun_r * 2, _sun_r * 2, 0., 360. );
 	}
+	void toggle_fullscreen()
+	{
+		if ( fullscreen_active() )
+		{
+			fullscreen_off();
+			cursor( FL_CURSOR_DEFAULT );
+		}
+		else
+		{
+			fullscreen();
+			cursor( FL_CURSOR_NONE );
+		}
+	}
 	void init()
 	{
 		_sun_r = w() / 30;
@@ -362,10 +374,7 @@ public:
 			}
 			else if ( c == 'f' )
 			{
-				if ( fullscreen_active() )
-					fullscreen_off();
-				else
-					fullscreen();
+				toggle_fullscreen();
 			}
 			else if ( c == 's' || c == '+' || c == '-' )
 			{
@@ -498,7 +507,7 @@ public:
 			if ( arg == "-d" )
 				_debug = true;
 			if ( arg == "-f" )
-				fullscreen();
+				toggle_fullscreen();
 			if ( arg == "-s" )
 				_to = 0.03;
 			if ( arg == "-ss" )
