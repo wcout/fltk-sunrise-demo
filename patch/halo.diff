@@ -1,0 +1,114 @@
+diff --git a/sunrise.cxx b/sunrise.cxx
+index bb438c4..73db375 100644
+--- a/sunrise.cxx
++++ b/sunrise.cxx
+@@ -33,7 +33,10 @@
+ using namespace std;
+ 
+ static const int HaloSize = 10; 	// in sun radius unit
+-static int FPS = 20;
++static const Fl_Color SunZenithColor = fl_lighter( FL_YELLOW );
++static const Fl_Color SunHorizonColor = FL_DARK_RED;
++
++static int FPS = 20; // default refresh rate
+ 
+ static uchar *make_alpha_box( Fl_Color c_, int w_, int h_, int alpha_ )
+ {
+@@ -169,7 +172,9 @@ public:
+ 		_to( 1. / FPS ),
+ 		_hold( false ),
+ 		_no_moon( false ),
+-		_cloud_dissolve_f( 1. )
++		_cloud_dissolve_f( 1. ),
++		_eclipse_f( 0 ),
++		_halo_sz( 0 )
+ 	{
+ 		moveSun();	// initialize remaining values
+ 		moveMoon();	// initialize remaining values
+@@ -228,10 +233,10 @@ public:
+ 
+ 			// let no stars be visible beneath sun
+ 			if ( ( ( _sun_angle > 160. && _sun_angle < 360. ) || _sun_angle < 20. ) &&
+-			     sun_dist < 6 * _sun_r )
++			     sun_dist < _halo_sz * _sun_r )
+ 				continue;
+ 
+-			Fl_Color color = fl_color_average( _bg, _stars[i].color, std::min( 1., nightFactor() * 2 ) );
++			Fl_Color color = fl_color_average( _bg, _stars[i].color, std::min( 1., dayFactor() * 2 ) );
+ 			int d = _stars[i].d;
+ 
+ 			if ( w() >= 400 && h() >= 400 )
+@@ -261,10 +266,16 @@ public:
+ 	}
+ 	void drawHalo()
+ 	{
+-		Fl_Color sun_color = fl_color_average( fl_lighter( FL_YELLOW ), FL_DARK_RED, zenith() );
+-		for ( double i = HaloSize; i > 1; i -= 0.1 )
++		Fl_Color sun_color = fl_color_average( SunZenithColor, SunHorizonColor, zenith() );
++		bool total_eclipse = _eclipse_f > 0.93;
++		_halo_sz = 	HaloSize * dayFactor() + 2 * ( 1. - dayFactor() );
++		double step_sz = _halo_sz / 100;
++		for ( double i = _halo_sz; i > 1; i -= step_sz )
+ 		{
+-			fl_color( fl_color_average( sun_color, _bg, 1. / (double)(i) ) );
++			Fl_Color c = total_eclipse || zenith() < 0.6 ?
++					fl_color_average( _bg, sun_color, i / _halo_sz ) :
++					fl_color_average( sun_color, _bg, 1. / ( (double)i ) );
++			fl_color( c );
+ 			fl_pie( _sun_x - i * (double)_sun_r, h() - _sun_r -_sun_y - (double)_sun_r * (i - 1),
+                  _sun_r * 2 * i, _sun_r * 2 * i, 0., 360. );
+ 		}
+@@ -294,7 +305,7 @@ public:
+ 	}
+ 	void drawSun()
+ 	{
+-		Fl_Color sun_color = fl_color_average( fl_lighter( FL_YELLOW ), FL_DARK_RED, zenith() );
++		Fl_Color sun_color = fl_color_average( SunZenithColor, SunHorizonColor, zenith() );
+ 		fl_color( sun_color );
+ 		fl_pie( _sun_x - _sun_r, h() - _sun_y - _sun_r, _sun_r * 2, _sun_r * 2, 0., 360. );
+ 	}
+@@ -471,12 +482,11 @@ public:
+ 		static const double angle_inc = 0.05 + 0.004;
+ 		moveSunOrMoon( angle_inc, _moon_angle, _moon_x, _moon_y, _moon_zenith );
+ 	}
+-
+ 	void onTimer()
+ 	{
+ 		if ( _hold )
+ 			return;
+-		_bg = fl_color_average( FL_CYAN, fl_darker( FL_DARK_BLUE ), nightFactor() );
++		_bg = fl_color_average( FL_CYAN, fl_darker( FL_DARK_BLUE ), dayFactor() );
+ 		_frame++;
+ 		moveSun();
+ 		moveMoon();
+@@ -529,16 +539,20 @@ public:
+ 	{
+ 		return _zenith > 0. ? _zenith > 1. ? 1. : _zenith : .0;
+ 	}
+-	double nightFactor() const
++	double dayFactor()
+ 	{
+ 		static const double NearDist = 2.;
++		_eclipse_f = 0;
+ 		if ( !_no_moon && rising() )
+ 		{
+ 			double sun_moon_dist = fabs( _sun_angle - _moon_angle );
+ 			if ( sun_moon_dist > 180. )
+ 				sun_moon_dist = 360 - sun_moon_dist;
+ 			if ( sun_moon_dist < NearDist )
++			{
++				_eclipse_f = 1. - sun_moon_dist / NearDist;
+ 				return ( sun_moon_dist / NearDist ) * zenith();
++			}
+ 		}
+ 		return zenith();
+ 	}
+@@ -559,6 +573,8 @@ private:
+ 	bool _hold;
+ 	bool _no_moon;
+ 	double _cloud_dissolve_f;
++	double _eclipse_f;
++	double _halo_sz;
+ 	vector<Star> _stars;
+ 	vector<Nebula *> _nebula;
+ 	vector<Cloud *> _clouds;
